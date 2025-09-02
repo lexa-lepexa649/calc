@@ -1,6 +1,5 @@
 use std::io;
-use crossterm::event::{read, Event, KeyCode};
-use std::process;
+
 
 
 fn div(num_1: f64, num_2: f64) -> f64 {
@@ -20,128 +19,109 @@ fn sub(num_1: i32, num_2: i32) -> i32 {
 }
 
 fn pow(base: i32, exponent: i32) -> i32 {
-    base.pow(exponent)
+    match base.checked_pow(exponent.try_into().unwrap()) {
+        Some(result) => result,
+        None => panic!("Переполнение при вычислении {}^{}", base, exponent),
+    }
+    //base.pow(exponent.try_into().unwrap())
 }
 
 fn sqrt(num: f64) -> f64 {
     num.sqrt()
 }
 
-fn exit() {
-    loop {
-        let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("Ошибка чтения ввода");
 
-        // Удаляем пробелы и перевод строки, приводим к нижнему регистру
-        let cmd = input.trim().to_lowercase();
-
-        if cmd == "q" || cmd == "exit" {
-            println!("Завершение программы...");
-            break;
-        } else {calc()}
-    }
-}
 
 fn calc() {
-    let mut res: i32 = 0;
+    loop {
+        let mut res: i32 = 0;
     let mut res_1: f64 = 0.0;
-    println!("Введите числа через пробел (например: 1 2 3 4 5):");
+   
+    println!("Введите calc и имя команды, которую хотите использовать(div, mul, sub, add, pow, sqrt, exit): ");
+
+////////////////////////////////////////////////////////////////////
 
     let mut input = String::new();
     io::stdin()
         .read_line(&mut input)
         .expect("Ошибка чтения ввода");
-
-    let parts: Vec<&str> = input.trim().split_whitespace().collect();
-
-    if parts.len() != 4 {
-        panic!("Нужно ввести возраст и имя!");
+    
+    let values: Vec<&str> = input.trim().split_whitespace().collect();
+    
+    if values.len() < 2 {
+        println!("Нужно ввести хотя бы два значения!");
+        return;
     }
+    
+    let num1: String = values[0].parse().expect("Первое значение не число");
+    let num2: String = values[1].parse().expect("Второе значение не число");
 
-    let calc = parts[0].to_string();
-    let typ = parts[1].to_string(); // Преобразуем &str в String
-    let num_1: i32 = parts[2].parse().expect("Возраст должен быть числом");
-    let num_2: i32 = parts[3].parse().expect("Возраст должен быть числом");
 
-    let tuple = (calc, typ, num_1, num_2);
-    println!("Данные: {:?}", tuple); // Например: (25, "Alice")
+    if num1 == "sqrt" {
+        println!("Введите число, из которого хотите извлечь корень: ");
+        let mut input = String::new();
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Ошибка чтения ввода");
+    
+    let number: f64 = input.trim().parse().expect("Введите корректное число!");
+    if number < 0.0 {
+        println!("Нельзя извлечь корень из отрицательного числа!");
+        return;
+    }
+    let res = sqrt(number);
+    print!("{}", res)
+    
+    
 
-    if tuple.0 == "calc" {
-        
+    } else if num2 == "div" || num2 == "mul" || num2 == "sub" || num2 == "add" || num2 == "pow" {
+        println!("Введите два числа через пробел: ");
 
-            let choice: &str = &tuple.1;
+            let mut input = String::new();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Ошибка чтения ввода");
+
+        let parts: Vec<&str> = input.trim().split_whitespace().collect();
+            
+        if parts.len() < 2 {
+        println!("Нужно ввести хотя бы два значения!");
+        return;
+    } 
+
+        let num_1: i32 = parts[0].parse().expect("Некорректное число!");
+        let num_2: i32 = parts[1].parse().expect("Некорректное число!");
+
+        let tuple = (num_1, num_2);
+
+        if num_2 == 0 && num2 == "div" {
+            println!("На ноль делить нельзя");
+            return;
+        }
+        println!("Данные: {:?}", tuple); 
+        let choice: &str = &values[1];
             match choice {
-                "div" => res_1 = div(tuple.2.into(), tuple.3.into()),
-                "mul" => res = mul(tuple.2, tuple.3),
-                "sub" => res = sub(tuple.2, tuple.3),
-                "add" => res = add(tuple.2, tuple.3),
-                "pow" => res = pow(tuple.2, tuple.3),
+                "div" => res_1 = div(tuple.0.into(), tuple.1.into()),
+                "mul" => res = mul(tuple.0, tuple.1),
+                "sub" => res = sub(tuple.0, tuple.1),
+                "add" => res = add(tuple.0, tuple.1),
+                "pow" => res = pow(tuple.0, tuple.1),
                 _ => println!("Вы ввели хуйню, сэр!")
             }
             
-        }
-    if tuple.1 == "div" {println!("{}", res_1)}
-    else {println!("{}", res)}
+        } else if values[1] == "exit" {
+            break;
+        } else {
+        println!("Неизвестная операция: {}", num2);
+        return;
+    }
+    if values[1] == "div" {println!("Ответ: {}", res_1)}
+    else {println!("Ответ: {}", res)}
+    }
+    }
 
-    
-
-    // loop {
-    //     if let Ok(Event::Key(event)) = read() {
-    //         if event.code != KeyCode::Char('q') { // Можно задать конкретную клавишу
-    //             break;
-    //         }
-    //     }
-    // }
-
-}
 
 fn main() {
-    // loop {
-    //     if let Ok(Event::Key(event)) = read() {
-    //         if event.code != KeyCode::Char('q') { // Можно задать конкретную клавишу
-    //             break;
-    //         } else {calc()}
-    //     }
-    // }
-    loop {calc()}
+    calc();
 }
 
-// use std::io;
-
-// #[derive(Debug)]
-// struct MixedData {
-//     id: i32,
-//     name: String,
-//     is_active: bool,
-// }
-
-// fn main() {
-//     println!("Введите ID, имя и активность (число строка true/false):");
-    
-//     let input = read_input();
-//     let data = parse_to_struct(&input);
-    
-//     println!("Структура: {:?}", data);
-// }
-
-// fn read_input() -> String {
-//     let mut input = String::new();
-//     io::stdin().read_line(&mut input).expect("Ошибка чтения");
-//     input.trim().to_string()
-// }
-
-// fn parse_to_struct(input: &str) -> MixedData {
-//     let parts: Vec<&str> = input.split_whitespace().collect();
-    
-//     if parts.len() < 3 {
-//         panic!("Недостаточно данных");
-//     }
-    
-//     MixedData {
-//         id: parts[0].parse().expect("ID должен быть числом"),
-//         name: parts[1].to_string(),
-//         is_active: parts[2].parse().expect("Активность должна быть true/false"),
-//     }
-// }
