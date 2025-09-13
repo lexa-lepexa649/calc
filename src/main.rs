@@ -1,127 +1,113 @@
 use std::io;
 
-
-
-fn div(num_1: f64, num_2: f64) -> f64 {
-    num_1 / num_2
-}
-
-fn mul(num_1: i32, num_2: i32) -> i32 {
-    num_1 * num_2
-}
-
-fn add(num_1: i32, num_2: i32) -> i32 {
-    num_1 + num_2
-}
-
-fn sub(num_1: i32, num_2: i32) -> i32 {
-    num_1 - num_2
-}
-
-fn pow(base: i32, exponent: i32) -> i32 {
-    match base.checked_pow(exponent.try_into().unwrap()) {
-        Some(result) => result,
-        None => panic!("Переполнение при вычислении {}^{}", base, exponent),
+fn div(a: i32, b: i32) -> Result<f64, String> {
+    if b == 0 {
+        return Err("Деление на ноль невозможно".to_string());
     }
-    //base.pow(exponent.try_into().unwrap())
+    Ok(a as f64 / b as f64)
 }
 
-fn sqrt(num: f64) -> f64 {
-    num.sqrt()
+fn mul(a: i32, b: i32) -> Result<i32, String> {
+    Ok(a * b)
 }
 
+fn sub(a: i32, b: i32) -> Result<i32, String> {
+    Ok(a - b)
+}
 
+fn add(a: i32, b: i32) -> Result<i32, String> {
+    Ok(a + b)
+}
+
+fn pow(a: i32, b: i32) -> Result<i32, String> {
+    if b > 10 {
+        println!("Предупреждение: Результат может быть слишком большим");
+    }
+    Ok(a.pow(b as u32))
+}
+
+fn sqrt(a: i32) -> Result<f64, String> {
+    if a < 0 {
+        return Err("Нельзя извлечь корень из отрицательного числа".to_string());
+    }
+    Ok((a as f64).sqrt())
+}
 
 fn calc() {
     loop {
-        let mut res: i32 = 0;
-    let mut res_1: f64 = 0.0;
-   
-    println!("Введите calc и имя команды, которую хотите использовать(div, mul, sub, add, pow, sqrt, exit): ");
-
-////////////////////////////////////////////////////////////////////
-
-    let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Ошибка чтения ввода");
-    
-    let values: Vec<&str> = input.trim().split_whitespace().collect();
-    
-    if values.len() < 2 {
-        println!("Нужно ввести хотя бы два значения!");
-        return;
-    }
-    
-    let num1: String = values[0].parse().expect("Первое значение не число");
-    let num2: String = values[1].parse().expect("Второе значение не число");
-
-
-    if num1 == "sqrt" {
-        println!("Введите число, из которого хотите извлечь корень: ");
+        println!("Введите calc и команду (div, mul, sub, add, pow, sqrt, exit): ");
+        
         let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Ошибка чтения ввода");
-    
-    let number: f64 = input.trim().parse().expect("Введите корректное число!");
-    if number < 0.0 {
-        println!("Нельзя извлечь корень из отрицательного числа!");
-        return;
-    }
-    let res = sqrt(number);
-    print!("{}", res)
-    
-    
-
-    } else if num2 == "div" || num2 == "mul" || num2 == "sub" || num2 == "add" || num2 == "pow" {
-        println!("Введите два числа через пробел: ");
-
-            let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("Ошибка чтения ввода");
-
+        io::stdin().read_line(&mut input).unwrap();
+        
         let parts: Vec<&str> = input.trim().split_whitespace().collect();
-            
-        if parts.len() < 2 {
-        println!("Нужно ввести хотя бы два значения!");
-        return;
-    } 
-
-        let num_1: i32 = parts[0].parse().expect("Некорректное число!");
-        let num_2: i32 = parts[1].parse().expect("Некорректное число!");
-
-        let tuple = (num_1, num_2);
-
-        if num_2 == 0 && num2 == "div" {
-            println!("На ноль делить нельзя");
-            return;
-        }
-        println!("Данные: {:?}", tuple); 
-        let choice: &str = &values[1];
-            match choice {
-                "div" => res_1 = div(tuple.0.into(), tuple.1.into()),
-                "mul" => res = mul(tuple.0, tuple.1),
-                "sub" => res = sub(tuple.0, tuple.1),
-                "add" => res = add(tuple.0, tuple.1),
-                "pow" => res = pow(tuple.0, tuple.1),
-                _ => println!("Вы ввели хуйню, сэр!")
-            }
-            
-        } else if values[1] == "exit" {
+        
+        // Выход
+        if parts.get(0) == Some(&"exit") {
+            println!("Выход из калькулятора");
             break;
-        } else {
-        println!("Неизвестная операция: {}", num2);
-        return;
+        }
+        
+        // Обработка команд
+        let result = match parts.as_slice() {
+            ["calc", "exit"] => {
+                println!("Выход");
+                break;
+            },
+            
+            // Команды с одним аргументом
+            ["calc", "sqrt", num] => {
+                num.parse::<i32>()
+                    .map_err(|_| format!("Некорректное число: {}", num))
+                    .and_then(|n| sqrt(n))
+            },
+            
+            // Команды с двумя аргументами
+            ["calc", command, num1, num2] => {
+                let a = num1.parse::<i32>()
+                    .map_err(|_| format!("Некорректное число: {}", num1))?;
+                
+                let b = num2.parse::<i32>()
+                    .map_err(|_| format!("Некорректное число: {}", num2))?;
+                
+                match *command {
+                    "div" => div(a, b),
+                    "mul" => mul(a, b).map(|res| res as f64),
+                    "sub" => sub(a, b).map(|res| res as f64),
+                    "add" => add(a, b).map(|res| res as f64),
+                    "pow" => pow(a, b).map(|res| res as f64),
+                    _ => Err(format!("Неизвестная операция: {}", command)),
+                }
+            },
+            
+            // Недостаточно аргументов
+            ["calc", "div"] | ["calc", "mul"] | ["calc", "sub"] | ["calc", "add"] | ["calc", "pow"] => {
+                Err("Недостаточно аргументов для операции".to_string())
+            },
+            
+            ["calc", "sqrt"] => {
+                Err("Недостаточно аргументов для извлечения корня".to_string())
+            },
+            
+            // Неизвестная команда
+            ["calc", command, ..] if !["div", "mul", "sub", "add", "pow", "sqrt"].contains(command) => {
+                Err(format!("Неизвестная операция: {}", command))
+            },
+            
+            // Неправильный формат
+            _ => Err("Неверный формат! Используйте: calc команда число1 [число2]".to_string()),
+        };
+        
+        // Вывод результата или ошибки
+        match result {
+            Ok(res) => println!("Результат: {:.2}", res),
+            Err(err) => println!("Ошибка: {}", err),
+        }
+        
+        println!(); // Пустая строка для читаемости
     }
-    if values[1] == "div" {println!("Ответ: {}", res_1)}
-    else {println!("Ответ: {}", res)}
-    }
-    }
-
+}
 
 fn main() {
     calc();
 }
-
